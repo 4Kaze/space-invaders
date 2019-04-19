@@ -220,7 +220,7 @@ Game::~Game() {
 
   endwin();
 
-  std::cout << "Twoj czas: ";
+  std::cout << "Your time: ";
   int minutes = gameTime / 60;
   int seconds = gameTime - (minutes * 60);
   if(minutes < 10) std::cout << "0" << minutes << ":";

@@ -96,15 +96,14 @@ void Menu::render() {
   }
 
   attroff(COLOR_PAIR(30));
-// << wcisnij [spacje] by zaczac >>
   attron(A_BOLD);
-  mvaddstr(y+yoffset+10, width/2 - 16, "<< wcisnij [spacje] by zaczac >>");
+  mvaddstr(y+yoffset+10, width/2 - 14, "<< press [space] to start >>");
   int x = 4;
-  mvaddstr(height-6, x, "Sterowanie:");
-  mvaddstr(height-5, x, "[A] by leciec w lewo");
-  mvaddstr(height-4, x, "[D] by leciec w prawo");
-  mvaddstr(height-3, x, "[SPACJA] by przelaczyc strzelanie");
-  mvaddstr(height-2, x, "[ESC] by wyjsc");
+  mvaddstr(height-6, x, "Controls:");
+  mvaddstr(height-5, x, "[A] to go left");
+  mvaddstr(height-4, x, "[D] to go right");
+  mvaddstr(height-3, x, "[SPACE] to toggle shooting");
+  mvaddstr(height-2, x, "[ESC] to quit");
   attroff(A_BOLD);
 
   refresh();

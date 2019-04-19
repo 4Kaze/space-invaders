@@ -3,8 +3,8 @@
 #include "Game.h"
 #include "Log.h"
 
-//type 0 - wystrzelony przez gracza
-//type inny - wystrzelony przez wroga
+//type 0 - shot by player
+//different type - shot by an enemy
 Projectile::Projectile(int x, int y, int type, Game* parent):Entity(x, y, parent) {
   width = 1;
   height = 1;

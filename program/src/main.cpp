@@ -45,6 +45,5 @@ int main() {
 
   }
 
-  //  std::cout << Game::GAME_WIDTH << ", " << Game::GAME_HEIGHT << std::endl;
   return 0;
 }

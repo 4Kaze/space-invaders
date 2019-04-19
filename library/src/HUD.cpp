@@ -32,7 +32,7 @@ void HUD::render(int health, int time) {
   ss.str("");
   ss.clear();
 
-  ss << "  CZAS: ";
+  ss << "  TIME: ";
   int minutes = time / 60;
   int seconds = time - (minutes * 60);
   if(minutes < 10) ss << "0" << minutes << ":";
