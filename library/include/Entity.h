@@ -15,6 +15,7 @@ class Game;
 class Entity {
 public:
   Entity(int x, int y, Game* parent);
+  virtual ~Entity() {};
   virtual void update(unsigned int time) = 0;
   virtual void render();
   void remove();
@@ -22,6 +23,8 @@ public:
   int getHeight() const;
   int getX() const;
   int getY() const;
+  void setX(int x);
+  void setY(int y);
   bool isToRemove() const;
 
 protected:

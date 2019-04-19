@@ -1,15 +1,14 @@
 #include "Game.h"
 #include <curses.h>
 #include "Projectile.h"
-#include "Particle.h"
+#include "Explosion.h"
 #include "Enemy.h"
 #include "Player.h"
 #include "Star.h"
 #include <algorithm>
-#include <stdlib.h>
-#include <time.h>
 #include "Log.h"
 #include <iostream>
+#include "Level.h"
 
 int Game::GAME_WIDTH = 0;
 int Game::GAME_HEIGHT = 0;
@@ -17,8 +16,16 @@ bool Game::running = false;
 
 void Game::init() {
   initscr();
+  if(!has_colors) {
+    std::cout << "This terminal doesn't support colors!" << std::endl;
+    exit(-1);
+  }
   start_color();
   getmaxyx(stdscr, GAME_HEIGHT, GAME_WIDTH);
+  if(GAME_HEIGHT < 30 || GAME_WIDTH < 100) {
+    std::cout << "The terminal window is too small. The minimum size is 30x100." << std::endl;
+    exit(-1);
+  }
   raw();
   keypad(stdscr, true);
   nodelay(stdscr,true);
@@ -35,26 +42,48 @@ void Game::init() {
   init_pair(COLORS::CYAN, COLOR_CYAN, bg);
   init_pair(COLORS::BLACK, COLOR_BLACK, bg);
 
-  srand(time(0));
-  generateSky();
-
   player = new Player(Game::GAME_WIDTH/2 - 3,Game::GAME_HEIGHT-5,100,4,10, this);
 
   hud.init();
+  sky.init();
 
   running = true;
+
+  Log::get() << "Game initialized...";
+  Log::get().nl();
 }
 
 Entity* Game::addEntity(Entity* entity) {
-  if(dynamic_cast<Projectile*>(entity)) {
-    projectiles.push_back(dynamic_cast<Projectile*>(entity));
-  } else if(dynamic_cast<Particle*>(entity)) {
-    particles.push_back(dynamic_cast<Particle*>(entity));
-  } else if(dynamic_cast<Enemy*>(entity)) {
+  if(dynamic_cast<Enemy*>(entity)) {
     enemies.push_back(dynamic_cast<Enemy*>(entity));
+  } else if(dynamic_cast<Projectile*>(entity)) {
+    projectiles.push_back(dynamic_cast<Projectile*>(entity));
+  } else if(dynamic_cast<Explosion*>(entity)) {
+    particles.push_back(dynamic_cast<Explosion*>(entity));
   }
 
   return entity;
+}
+
+void Game::addProjectile(int x, int y, int type) {
+  if(projectileTrash.size() > 0) {
+    Projectile* e = projectileTrash.back();
+    e->recycle(x,y,type);
+    projectiles.push_back(e);
+    projectileTrash.pop_back();
+  } else {
+    projectiles.push_back(new Projectile(x,y,type,this));
+  }
+}
+void Game::addExplosion(int x, int y) {
+  if(particleTrash.size() > 0) {
+    Explosion* e = particleTrash.back();
+    e->recycle(x,y);
+    particles.push_back(e);
+    particleTrash.pop_back();
+  } else {
+    particles.push_back(new Explosion(x,y,this));
+  }
 }
 
 Projectile* Game::getProjectileAt(int x1, int y1, int x2, int y2, bool enemy) {
@@ -68,11 +97,10 @@ void Game::update(unsigned int time) {
   controller.update();
   if(Controller::isEscPressed()) running = false;
 
-
   for(auto it = projectiles.begin(); it < projectiles.end(); it++) {
     (*it)->update(time);
     if((*it)->isToRemove()) {
-      delete (*it);
+      projectileTrash.push_back(*it);
       projectiles.erase(it);
       it--;
     }
@@ -80,7 +108,7 @@ void Game::update(unsigned int time) {
   for(auto it = particles.begin(); it < particles.end(); it++) {
     (*it)->update(time);
     if((*it)->isToRemove()) {
-      delete (*it);
+      particleTrash.push_back(*it);
       particles.erase(it);
       it--;
     }
@@ -92,6 +120,7 @@ void Game::update(unsigned int time) {
       delete (*it);
       enemies.erase(it);
       it--;
+
     }
   }
 
@@ -100,37 +129,17 @@ void Game::update(unsigned int time) {
     timer = time+1000;
   }
 
-  if(time > skyTimer) {
-    skyTimer = time + 50;
-    updateSky();
-  }
+  currentLevel->update(time);
 
-  if(time > spawnTimer) {
-    int level = gameTime > 120 ? 1 : (gameTime > 60 ? 2 : 3);
-    spawnTimer = time + rand() % 2000 + 500;
-    if(rand() % level == 0) {
-      int t = rand() % 100;
-      int x = rand() % GAME_WIDTH;
-      int y = rand() % 5 - 3;
-      Log::f << "Spawning at " << x <<", " << y << ", level is " << level;
-      Log::nl();
-      if(t > 50) {
-        addEntity(new Enemy(x,y,2,this));
-      } else if(t > 15) {
-        addEntity(new Enemy(x,y,1,this));
-      } else {
-        addEntity(new Enemy(x,y,3,this));
-      }
-    }
-  }
+  sky.update(time);
 
   player->update(time);
+
 }
 
 void Game::render() {
-  for(Star* s : stars) {
-    s->render();
-  }
+  sky.render();
+
   for(Enemy* e : enemies) {
     e->render();
   }
@@ -140,7 +149,7 @@ void Game::render() {
   for(Projectile* p : projectiles) {
     p->render();
   }
-  for(Particle* p : particles) {
+  for(Explosion* p : particles) {
     p->render();
   }
 
@@ -150,59 +159,16 @@ void Game::render() {
   clear();
 }
 
-void Game::generateSky() {
-  for(int i = 0; i < GAME_HEIGHT; i++) {
-    int n = rand() % (GAME_WIDTH / 50);
-    while(n-- > 0) {
-      int x = rand() % GAME_WIDTH;
-      stars.push_back(new Star(x,i,2));
-    }
-    n = rand() % (GAME_WIDTH / 30);
-    while(n-- > 0) {
-      int x = rand() % GAME_WIDTH;
-      stars.push_back(new Star(x,i,1));
-    }
-    n = rand() % (GAME_WIDTH / 40);
-    while(n-- > 0) {
-      int x = rand() % GAME_WIDTH;
-      stars.push_back(new Star(x,i,0));
-    }
-  }
-
+void Game::setLevel(Level* level) {
+  delete currentLevel;
+  currentLevel = level;
+  level->init(this);
 }
 
-void Game::updateSky() {
-  for(auto it = stars.begin(); it < stars.end(); it++) {
-    (*it)->update(0);
-    if((*it)->isToRemove()) {
-      delete (*it);
-      stars.erase(it);
-      it--;
-    }
-  }
-
-  int n = rand() % (GAME_WIDTH / 50);
-  while(n-- > 0) {
-    int x = rand() % GAME_WIDTH;
-    stars.push_back(new Star(x,0,2));
-  }
-  if(skipped % 2 == 0) {
-    int n = rand() % (GAME_WIDTH / 30);
-    while(n-- > 0) {
-      int x = rand() % GAME_WIDTH;
-      stars.push_back(new Star(x,0,1));
-    }
-  }
-  if(skipped == 3) {
-    int n = rand() % (GAME_WIDTH / 40);
-    while(n-- > 0) {
-      int x = rand() % GAME_WIDTH;
-      stars.push_back(new Star(x,0,0));
-    }
-    skipped = -1;
-  }
-  skipped++;
+int Game::getEntityCount() const {
+  return enemies.size() + projectiles.size() + particles.size() + 1;
 }
+
 Game::~Game() {
   for(Enemy* e : enemies) {
     delete e;
@@ -210,13 +176,17 @@ Game::~Game() {
   for(Projectile* p : projectiles) {
     delete p;
   }
-  for(Particle* p : particles) {
+  for(Projectile* p : projectileTrash) {
     delete p;
   }
-  for(Star* s : stars) {
-    delete s;
+  for(Explosion* p : particles) {
+    delete p;
+  }
+  for(Explosion* p : particleTrash) {
+    delete p;
   }
   delete player;
+  delete currentLevel;
 
   endwin();
 

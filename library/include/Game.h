@@ -2,13 +2,14 @@
 #include <vector>
 #include "Controller.h"
 #include "HUD.h"
+#include "Sky.h"
 
 class Entity;
 class Enemy;
 class Player;
 class Projectile;
-class Particle;
-class Star;
+class Explosion;
+class Level;
 
 class Game {
 public:
@@ -21,22 +22,22 @@ public:
   void render();
   Entity* addEntity(Entity* entity);
   Projectile* getProjectileAt(int x1, int y1, int x2, int y2, bool enemy);
+  void addProjectile(int x, int y, int type);
+  void addExplosion(int x, int y);
+  void setLevel(Level* level);
+  int getEntityCount() const;
 
 private:
   std::vector<Enemy*> enemies;
   std::vector<Projectile*> projectiles;
-  std::vector<Particle*> particles;
-  std::vector<Star*> stars;
+  std::vector<Explosion*> particles;
+  std::vector<Projectile*> projectileTrash;
+  std::vector<Explosion*> particleTrash;
   Controller controller;
+  Level* currentLevel = nullptr;
   HUD hud;
+  Sky sky;
   Player* player;
   double timer = 0;
-  double skyTimer = 0;
-  int spawnTimer = 0;
   int gameTime = 0;
-  int skipped = 0;
-
-  void generateSky();
-  void updateSky();
-
 };

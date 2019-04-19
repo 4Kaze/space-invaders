@@ -5,6 +5,7 @@
 #include "Log.h"
 #include <stdlib.h>
 #include <time.h>
+#include <stdexcept>
 
 int Menu::width = 0;
 int Menu::height = 0;
@@ -39,8 +40,14 @@ Menu::Menu() {
 
 void Menu::init() {
   initscr();
+  if(!has_colors) {
+    throw std::logic_error("Ten terminal nie obsługuje kolorów!");
+  }
   start_color();
   getmaxyx(stdscr, height, width);
+  if(height < 30 || width < 100) {
+    throw std::logic_error("Okno terminala jest za małe. Minimalna wielkość to 30x100.");
+  }
   raw();
   keypad(stdscr, true);
   nodelay(stdscr,true);
@@ -82,7 +89,6 @@ void Menu::render() {
 
   attron(COLOR_PAIR(30));
   int yoffset = 6;
-  int xoffset = 2;
   for(int i = 0; i < 5; i++) {
     for(int j = 0; j < 31; j++) {
       if(upperBody[i][j] != ' ') mvaddch(y+i,width/2 - 17 +j,upperBody[i][j]);
@@ -120,15 +126,16 @@ void Menu::update(unsigned int time) {
   }
 
     for(int i = 0; i < 31; i++) {
-      if(upperBody[4][i] != ' ') if(rand() % 3 == 0) dashes.push_back(new Dash(y+5, width/2 - 17 + i, this));
+      if(upperBody[4][i] != ' ') if(rand() % 3 == 0) addDash(width/2 - 17 + i,y+5);
     }
     for(int i = 0; i < 38; i++) {
-      if(lowerBody[4][i] != ' ') if(rand() % 3 == 0) dashes.push_back(new Dash(y+11,width/2 - 19+i, this));
+      if(lowerBody[4][i] != ' ') if(rand() % 3 == 0) addDash(width/2 - 19+i, y+11);
     }
 
   for(auto it = dashes.begin(); it < dashes.end(); it++) {
     (*it)->update();
     if((*it)->toRemove) {
+      dashTrash.push_back(*it);
       dashes.erase(it);
       it--;
     }
@@ -137,6 +144,7 @@ void Menu::update(unsigned int time) {
   for(auto it = stars.begin(); it < stars.end(); it++) {
     (*it)->update();
     if((*it)->toRemove) {
+      starTrash.push_back(*it);
       stars.erase(it);
       it--;
     }
@@ -146,15 +154,36 @@ void Menu::update(unsigned int time) {
       int n = rand() % (width / 20);
       while(n-- > 0) {
         int x = rand() % width;
-        stars.push_back(new MenuStar(x,0));
+        addStar(x,0);
       }
     counter = 1;
   } else counter--;
 }
 
-
 bool Menu::getGreenLight() {
   return greenLight;
+}
+
+void Menu::addDash(int x, int y) {
+  if(dashTrash.size() > 0) {
+    Dash* e = dashTrash.back();
+    e->recycle(x,y);
+    dashes.push_back(e);
+    dashTrash.pop_back();
+  } else {
+    dashes.push_back(new Dash(x,y, this));
+  }
+}
+
+void Menu::addStar(int x, int y) {
+  if(starTrash.size() > 0) {
+    MenuStar* e = starTrash.back();
+    e->recycle(x,y);
+    stars.push_back(e);
+    starTrash.pop_back();
+  } else {
+    stars.push_back(new MenuStar(x,y));
+  }
 }
 
 Menu::~Menu() {
@@ -164,14 +193,30 @@ Menu::~Menu() {
   for(MenuStar* s : stars) {
     delete s;
   }
+  for(Dash* d : dashTrash) {
+    delete d;
+  }
+  for(MenuStar* s : starTrash) {
+    delete s;
+  }
   endwin();
 }
 
-Dash::Dash(int y, int x, Menu* parent) {
+Dash::Dash(int x, int y, Menu* parent) {
+  init(x, y);
+  this->parent = parent;
+}
+
+void Dash::recycle(int x, int y) {
+  init(x, y);
+  skipped = false;
+  toRemove = false;
+}
+
+void Dash::init(int x, int y) {
   this->x = x;
   this->y = y;
-  this->parent = parent;
-  life = rand() % 8 + 10;
+  life = rand() % (Menu::height / 3) + (Menu::height / 7);
   color = rand() % 6;
 }
 
@@ -193,8 +238,18 @@ void Dash::update() {
 }
 
 MenuStar::MenuStar(int x, int y) {
+  init(x, y);
+}
+
+void MenuStar::recycle(int x, int y) {
+  init(x, y);
+  skipped = 0;
+  toRemove = false;
+}
+
+void MenuStar::init(int x, int y) {
   this->x = x;
-  this-> y = y;
+  this->y = y;
   this-> color = rand() % 7 + 6;
   int a = rand() %3;
   if(a == 0) attr = 0;

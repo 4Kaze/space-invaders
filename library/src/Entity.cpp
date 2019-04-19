@@ -42,3 +42,11 @@ bool Entity::isToRemove() const {
 void Entity::remove() {
   toRemove = true;
 }
+
+void Entity::setX(int x) {
+  this->x = x;
+}
+
+void Entity::setY(int y) {
+  this->y = y;
+}

@@ -1,15 +1,22 @@
 #include "Log.h"
+#include <stdexcept>
 
-std::ofstream Log::f;
-void Log::init() {
-  Log::f.open("log");
-  if(!Log::f.good()) exit(-1);
-  Log:: f << "Logging initialized" << std::endl;
+Log::Log() {
+  file.open("log");
+  if(!file.good()) {
+    throw std::logic_error("Nie można utworzyć pliku do logowania.");
+  }
+  file << "Logging initialized" << std::endl;
 
 }
 void Log::nl() {
-  Log::f << std::endl;
+  file << std::endl;
 }
+Log& Log::get() {
+  static Log singleton;
+  return singleton;
+}
+
 Log::~Log() {
-  Log::f.close();
+  file.close();
 }

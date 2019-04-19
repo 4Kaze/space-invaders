@@ -5,8 +5,9 @@ class Game;
 
 class Star: public Entity {
 public:
-  Star(int x, int y, char type);
+  Star(int x, int y, int type);
   ~Star();
+  void recycle(int x, int y, int type);
   void update(unsigned int time) override;
 
 protected:
@@ -14,5 +15,5 @@ protected:
 private:
   char** body;
   int skipped = 0;
-  char type;
+  int type;
 };

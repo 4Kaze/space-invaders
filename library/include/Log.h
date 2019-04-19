@@ -4,19 +4,18 @@
 
 class Log {
 public:
-  ~Log();
+  std::ofstream file;
+  void nl();
 
-  static std::ofstream f;
-  static void init();
-  static void nl();
-  /*template<typename T>
-  Log& operator<< (const T& data)
-  {
-      Log::f << data;
+  template<typename T>
+  Log& operator<< (const T& data) {
+      file << data;
       return *this;
-  }*/
+  }
 
+  static Log& get();
 
 private:
   Log();
+  ~Log();
 };

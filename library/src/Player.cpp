@@ -1,13 +1,11 @@
 #include "Player.h"
-#include "Log.h"
 #include <string>
 #include "ncurses.h"
 #include "Controller.h"
 #include "Game.h"
 #include "Projectile.h"
-#include "Particle.h"
 
-Player::Player(int x, int y, float health, float speed, float strength, Game* parent): Entity(x, y, parent), health(health), speed(speed), strength(strength) {
+Player::Player(int x, int y, int health, int speed, int strength, Game* parent): Entity(x, y, parent), health(health), speed(speed), strength(strength) {
   this->height = 2;
   this->width = 7;
   std::string l[2] = {
@@ -33,7 +31,7 @@ void Player::update(unsigned int time) {
     if(deathTimer == 0) {
       Game::running = false;
     } else if(deathTimer % 10 == 0) {
-      parent->addEntity(new Particle(x-1,y-1,parent));
+      parent->addExplosion(x-1,y-1);
     }
     health = 0;
     color = COLORS::RED;
@@ -43,7 +41,7 @@ void Player::update(unsigned int time) {
   Projectile* p;
   p = parent->getProjectileAt(x, y, x+width, y+height, true);
   if(p != nullptr) {
-    takeDamage(p->getDamage());
+    takeDamage(p->getX(), p->getY(), p->getDamage());
     p->remove();
   }
 
@@ -63,7 +61,7 @@ void Player::update(unsigned int time) {
   if(x > Game::GAME_WIDTH - width/2 + 1) x =  Game::GAME_WIDTH - width/2;
 
   if(time > shootTimer && shooting) {
-  parent->addEntity(new Projectile(x + width/2,y-1,0,parent));
+  parent->addProjectile(x + width/2,y-1,0);
   shootTimer = time + (1000/strength)*2;
   }
 
@@ -78,9 +76,9 @@ char** Player::getBody() {
   return body;
 }
 
-void Player::takeDamage(int amount) {
+void Player::takeDamage(int x, int y, int amount) {
   health -= amount;
-  parent->addEntity(new Particle(x-1,y-1,parent));
+  parent->addExplosion(x-5,y-2);
   if(health < 1) die();
   else {
     colorTimer = 10;
@@ -97,7 +95,7 @@ int Player::getHP() const {
 }
 Player::~Player() {
   for(int i = 0; i < height; i++) {
-    delete body[i];
+    delete[] body[i];
   }
-  delete body;
+  delete[] body;
 }

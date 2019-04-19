@@ -6,6 +6,7 @@ set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CURSES_NEED_NCURSES TRUE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #Set debug profile, also maximum level of debug info g3 and format of debug info to dwarf-4 (requires gdb in version 7)
 set(CMAKE_BUILD_TYPE Debug)
@@ -16,7 +17,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS_DEBUG "-g3 -gdwarf-4")
 endif()
 
-project(OOPProject)
+project(SpaceInvaders)
 enable_language(CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -5,9 +5,9 @@
 #include "Player.h"
 #include "Menu.h"
 #include "Log.h"
+#include "RandomLevel.h"
 
 int main() {
-  Log::init();
   {
     Menu m;
     m.init();
@@ -29,6 +29,7 @@ int main() {
   {
     Game game;
     game.init();
+    game.setLevel(new RandomLevel());
 
     std::chrono::time_point<std::chrono::steady_clock> nextTime;
     std::chrono::time_point<std::chrono::steady_clock> prevTime = std::chrono::steady_clock::now();;
@@ -45,5 +46,6 @@ int main() {
 
   }
 
+  //  std::cout << Game::GAME_WIDTH << ", " << Game::GAME_HEIGHT << std::endl;
   return 0;
 }

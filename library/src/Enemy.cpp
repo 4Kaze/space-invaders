@@ -1,97 +1,15 @@
-#include <string>
 #include "Enemy.h"
 #include "Entity.h"
 #include "Game.h"
 #include "Projectile.h"
-#include "Particle.h"
 
-Enemy::Enemy(int x, int y, int type, Game* parent):Entity(x, y, parent) {
-    switch(type){
-        case 1:
-        {
-            this->height = 3;
-            this->width = 5;
-            this->health = 50;
-            this->speed = 2;
-            this->strength = 2;
-            projectileType = 3;
-            std::string l[3] = {
-                    " vVv ",
-                    "=x=x=",
-                    "V^*^V"
-            };
-            body = new char*[height];
-
-            for(int i = 0; i < height; i++) {
-                body[i] = new char[width];
-                for(int j = 0; j < width; j++) {
-                    body[i][j] = l[i].at(j);
-                }
-            }
-
-            color = COLORS::MAGENTA;
-            break;
-        }
-
-        case 2:
-        default:{
-            this->height = 3;
-            this->width = 5;
-            this->health = 30;
-            this->speed = 3;
-            this->strength = 5;
-            projectileType = 1;
-            std::string l[3] = {
-                    ".V_V.",
-                    ":xXx:",
-                    "X ^ X"
-            };
-            body = new char*[height];
-
-            for(int i = 0; i < height; i++) {
-                body[i] = new char[width];
-                for(int j = 0; j < width; j++) {
-                    body[i][j] = l[i].at(j);
-                }
-            }
-            color = COLORS::BLUE;
-            break;
-        }
-        case 3: {
-            this->height = 3;
-            this->width = 5;
-            this->health = 20;
-            this->speed = 5;
-            this->strength = 10;
-            projectileType = 2;
-            std::string l[3] = {
-                    "\\_ _/",
-                    "  I  ",
-                    "_/ \\_"
-            };
-            body = new char*[height];
-            for(int i = 0; i < height; i++) {
-                body[i] = new char[width];
-                for(int j = 0; j < width; j++) {
-                    body[i][j] = l[i].at(j);
-                }
-            }
-
-            color = COLORS::CYAN;
-            break;
-        }
-    }
-
-
-
-    backupColor = color;
-}
+Enemy::Enemy(int x, int y, Game* parent):Entity(x, y, parent) {};
 
 void Enemy::update(unsigned int time) {
   Projectile* p;
   p = parent->getProjectileAt(x, y, x+width, y+height, false);
   if(p != nullptr) {
-    takeDamage(p->getDamage());
+    takeDamage(p->getX(), p->getY(), p->getDamage());
     p->remove();
   }
 
@@ -123,7 +41,7 @@ void Enemy::update(unsigned int time) {
 
   if(time > shootTimer) {
     shootTimer = time + (1000/strength)*2;
-    parent->addEntity(new Projectile(x+width/2, y+height,projectileType,parent));
+    parent->addProjectile(x+width/2, y+height,projectileType);
   }
 
   if(colorTimer > 0) {
@@ -133,14 +51,16 @@ void Enemy::update(unsigned int time) {
 
 }
 
-void Enemy::takeDamage(int amount) {
+void Enemy::takeDamage(int x, int y, int amount) {
   health -= amount;
-  parent->addEntity(new Particle(x+width/2-3,y+height-2,parent));
+  parent->addExplosion(x-5,y-2);
   if(health < 1) die();
   else {
+    if(backupColor == -1) backupColor = color;
     color = COLORS::RED;
     colorTimer = 15;
   }
+
 }
 
 void Enemy::die() {
@@ -153,14 +73,4 @@ int Enemy::getProjectileType() const{
 
 int Enemy::getHP() const{
     return health;
-}
-
-char** Enemy::getBody(){
-    return body;
-}
-Enemy::~Enemy() {
-    for(int i = 0; i < height; i++) {
-        delete body[i];
-    }
-    delete body;
 }
