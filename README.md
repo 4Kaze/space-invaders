@@ -1,5 +1,5 @@
 ## SPACE INVADERS
-This is a simple Space Invaders game made using ncurses.
+This is a simple Space Invaders game made with ncurses.
 To install ncurses on Ubuntu:
 ```
 sudo apt install libncurses5-dev libncursesw5-dev
