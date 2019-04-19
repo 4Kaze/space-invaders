@@ -1,4 +1,5 @@
-##SPACE INVADERS
+## SPACE INVADERS 
+###### an ncurses game
 This is a simple Space Invaders game made using ncurses.
 To install ncurses on Ubuntu:
 ```
